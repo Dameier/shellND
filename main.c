@@ -11,19 +11,19 @@ void inputloop() {
       while (nextData != NULL)
       {
         printf("%s\n",nextData);
-        if ("cd" == nextData){
+        if (strcmp("cd", nextData) == 0){
+            printf("cd");
+        }else if (strcmp("clr", nextData) == 0) {
+            printf("clr");
+        }else if (strcmp("dir", nextData) == 0) {
 
-        }else if (*nextData == "clr") {
+        }else if (strcmp("environ", nextData) == 0) {
 
-        }else if ("dir" == *nextData) {
+        }else if (strcmp("help", nextData) == 0) {
 
-        }else if (*nextData == "environ") {
+        }else if (strcmp("pause", nextData) == 0) {
 
-        }else if (*nextData == "help") {
-
-        }else if (*nextData == "pause") {
-
-        }else if (nextData == "quit") {
+        }else if (strcmp("quit", nextData) == 0) {
             printf("yep");
             exit(EXIT_SUCCESS);
         }else{printf("not a command");}
