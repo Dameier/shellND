@@ -8,11 +8,17 @@ void cd(char *nextData) {
 
 }
 
+/*
+ *Clears away the screen
+ */
 void clr() {
     printf("\033[2J");
     printf("\033[1;1H");
 }
 
+/*
+ *Lists the current directory contents
+ */
 void dir(char *nextData) {
     DIR *dir;
     struct dirent *file;
@@ -45,7 +51,17 @@ void echo(char *nextData) {
 }
 
 void help() {
-
+    printf("#################################### HELP ######################################\n");
+    printf("#                          ===== List of Commands =====                        #\n");
+    printf("# * cd      - navigates to a specified directory                               #\n");
+    printf("# * clr     - clears the current text from the window.                         #\n");
+    printf("# * dir     - lists the contents of the current directory.                     #\n");
+    printf("# * environ - displays all the environmental variables.                        #\n");
+    printf("# * echo    - prints whatever data is given to it.                             #\n");
+    printf("# * help    - displays this help text.                                         #\n");
+    printf("# * pause   - pauses the shell.                                                #\n");
+    printf("# * quit    - terminates the shell. Same as: exit, and kill.                   #\n");
+    printf("#################################### HELP ######################################\n");
 }
 
 void mypause() {
@@ -90,7 +106,7 @@ void inputloop() {
         }else if (strcmp("echo", nextData) == 0) {
             echo(nextData);
         }else if (strcmp("help", nextData) == 0) {
-
+            help();
         }else if (strcmp("pause", nextData) == 0) {
 
         }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)  || (strcmp("kill", nextData) == 0)) {
