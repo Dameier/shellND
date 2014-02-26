@@ -13,7 +13,7 @@ void clr() {
     printf("\033[1;1H");
 }
 
-void dir(char nextData) {
+void dir(char *nextData) {
     DIR *dir;
     struct dirent *file;
     nextData = strtok(NULL, " ");
@@ -75,7 +75,7 @@ void inputloop() {
 
     char line[256];
     gets(line);
-    char * nextData;
+    char *nextData;
       nextData = strtok(line," ");
       while (nextData != NULL)
       {
@@ -93,7 +93,7 @@ void inputloop() {
 
         }else if (strcmp("pause", nextData) == 0) {
 
-        }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)) {
+        }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)  || (strcmp("kill", nextData) == 0)) {
             exit(EXIT_SUCCESS);
         }else{printf("not a command\n");}
         nextData = strtok(NULL, " ");
