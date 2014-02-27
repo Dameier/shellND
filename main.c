@@ -24,7 +24,7 @@ void dir(char *nextData) {
     struct dirent *file;
     nextData = strtok(NULL, " ");
     if (nextData == NULL){
-        nextData = "/";
+        nextData = ".";
     }
     if ((dir = opendir(("%s", nextData))) == NULL)
         perror("opendir() error");
@@ -33,9 +33,14 @@ void dir(char *nextData) {
     printf("\n");
 }
 
-void environ() {
-
+void env() {
+    extern char **environ;
+    int i = 0;
+    while (environ[i]){
+        printf("%s\n", environ[i++]);
+    }
 }
+
 
 void echo(char *nextData) {
     if (nextData == NULL){
@@ -88,7 +93,6 @@ void setVariables() {
 Function that listens for input.
 */
 void inputloop() {
-
     char line[256];
     gets(line);
     char *nextData;
@@ -102,13 +106,15 @@ void inputloop() {
         }else if (strcmp("dir", nextData) == 0) {
             dir(nextData);
         }else if (strcmp("environ", nextData) == 0) {
-
+            env();
         }else if (strcmp("echo", nextData) == 0) {
             echo(nextData);
         }else if (strcmp("help", nextData) == 0) {
             help();
         }else if (strcmp("pause", nextData) == 0) {
-
+            printf("Press ENTER to continue.");
+            char *a;
+            gets(a);
         }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)  || (strcmp("kill", nextData) == 0)) {
             exit(EXIT_SUCCESS);
         }else{printf("not a command\n");}
