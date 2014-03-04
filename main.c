@@ -4,8 +4,40 @@
 #include <dirent.h>
 #include <unistd.h>
 
+char *cdir;
+/*
+ *function to change the current working directory.
+ *
+ *issues: if the user types cd .. it just tacs it on the end.
+ *This works but could be done better.
+ */
 void cd(char *nextData) {
-
+    DIR *dir;
+    char *string = malloc(1024);
+    nextData = strtok(NULL, " ");
+    if (nextData == NULL) {
+        cdir = getenv("shell");
+    }else{
+        char c = *nextData;
+        if (c==47){
+            if((dir = opendir(nextData)) == NULL) {
+                printf("%s does not exist.\n",nextData);
+            }else{
+                strcpy(string, nextData);
+                cdir = string;
+                printf("%s\n", cdir);
+            }
+        }else{
+            strcpy(string, cdir);
+            strcat(string,"/");
+            strcat(string, nextData);
+            if((dir = opendir(string)) == NULL) {
+                printf("%s does not exist.\n",string);
+            }else{
+                cdir = string;
+            }
+        }
+    }
 }
 
 /*
@@ -17,16 +49,30 @@ void clr() {
 }
 
 /*
+ *displays User and the current directory before asking for input.
+ */
+void displayCDir() {
+    printf("%s",getenv("USER"));
+    printf("@");
+    printf("%s",cdir);
+    printf(":");
+}
+
+/*
  *Lists the current directory contents
  */
 void dir(char *nextData) {
+    char *link;
     DIR *dir;
     struct dirent *file;
     nextData = strtok(NULL, " ");
     if (nextData == NULL){
-        nextData = ".";
+        printf("%s\n",cdir);
+        link = cdir;
+    }else{
+        link = nextData;
     }
-    if ((dir = opendir(("%s", nextData))) == NULL)
+    if ((dir = opendir(cdir)) == NULL)
         perror("opendir() error");
     while((file = readdir(dir)) != NULL)
         printf("  %s\t", file->d_name);
@@ -69,12 +115,9 @@ void help() {
     printf("#################################### HELP ######################################\n");
 }
 
-void mypause() {
 
-}
-
-/* function to set environment values and set starting location.
-
+/*
+function to set environment values and set starting location.
 */
 void setVariables() {
     char cwd[1024];
@@ -89,16 +132,18 @@ void setVariables() {
         perror("getcwd() error");
     return 0;
 }
+
 /*
 Function that listens for input.
 */
 void inputloop() {
+    displayCDir();
     char line[256];
     gets(line);
     char *nextData;
-      nextData = strtok(line," ");
-      while (nextData != NULL)
-      {
+    nextData = strtok(line," ");
+    while (nextData != NULL)
+    {
         if (strcmp("cd", nextData) == 0){
             cd(nextData);
         }else if (strcmp("clr", nextData) == 0) {
@@ -126,6 +171,7 @@ void inputloop() {
 int main(void)
 {
     setVariables();
+    cdir = getenv("shell");
     while (1) {
         inputloop();
     }
