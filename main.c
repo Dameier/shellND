@@ -72,7 +72,7 @@ void dir(char *nextData) {
     }else{
         link = nextData;
     }
-    if ((dir = opendir(cdir)) == NULL)
+    if ((dir = opendir(link)) == NULL)
         perror("opendir() error");
     while((file = readdir(dir)) != NULL)
         printf("  %s\t", file->d_name);
