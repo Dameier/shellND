@@ -6,10 +6,8 @@
 
 char *cdir;
 /*
- *function to change the current working directory.
- *
- *issues: if the user types cd .. it just tacs it on the end.
- *This works but could be done better.
+ *Function that attempts to execute anything that
+ *isn't a native part of our shell.
  */
 void exec(char *nextData) {
     char *envargs[20];
@@ -26,20 +24,29 @@ void exec(char *nextData) {
     }
     envargs[count] = (char *)0;
     pid_t pID = fork();
+    char * myPath = malloc(snprintf(NULL, 0, "%s %s", "parent=", getenv("shell")) + 1);
+    //char *env[] = { "PATH=/usr/bin:/bin:/opt/bin", (char *) 0 };
+    char *envp[] = { myPath, (char *) 0};
     if(pID == 0) {
-        execv(envargs[0], envargs);
-        int execReturn = execv(envargs[0], envargs);
+        //execv(envargs[0], envargs);
+        printf("\n");
+        int execReturn = execve(envargs[0], envargs, envp);
         if (execReturn == -1){
             printf("execv has failed.");
         }
         exit(0);
     }else if(pID < 0){
-        printf("nFailed to fork.\n");
+        printf("\nFailed to fork.");
     }else{
         printf("parent process\n");
     }
 }
-
+/*
+ *function to change the current working directory.
+ *
+ *issues: if the user types cd .. it just tacs it on the end.
+ *This works but could be done better.
+ */
 void cd(char *nextData) {
     DIR *dir;
     char *string = malloc(1024);
@@ -200,6 +207,8 @@ void inputloop() {
 int main(void)
 {
     setVariables();
+    printf(getenv("shell"));
+    printf("\n");
     cdir = getenv("shell");
     while (1) {
         inputloop();
