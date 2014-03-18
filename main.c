@@ -11,6 +11,13 @@ char *cdir;
  *issues: if the user types cd .. it just tacs it on the end.
  *This works but could be done better.
  */
+typedef struct {
+    char *array;
+    int num_elements;
+    int num_allocated;
+} Array;
+
+
 void cd(char *nextData) {
     DIR *dir;
     char *string = malloc(1024);
@@ -154,16 +161,58 @@ void inputloop() {
             env();
         }else if (strcmp("echo", nextData) == 0) {
             echo(nextData);
-        }else if (strcmp("help", nextData) == 0) {
-            help();
+        }else if (strcmp("echo", nextData) == 0) {
+            echo(nextData);
+        }else if (strcmp("fork", nextData) == 0) {
+            fork();
         }else if (strcmp("pause", nextData) == 0) {
             printf("Press ENTER to continue.");
             char *a;
             gets(a);
         }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)  || (strcmp("kill", nextData) == 0)) {
             exit(EXIT_SUCCESS);
-        }else{printf("not a command\n");}
-        nextData = strtok(NULL, " ");
+        }else{
+            Array the_array;
+            the_array.array = (char *)malloc(2 * sizeof(char));
+            the_array.num_elements = 0;
+            the_array.num_allocated = 2;
+            while(nextData != NULL){
+                if (the_array.num_elements == the_array.num_allocated){
+                    the_array.num_allocated *= 2;
+                    the_array.array = (char *)realloc(the_array.array, the_array.num_allocated * sizeof(char));
+                }
+                the_array.array[the_array.num_elements++] = nextData;
+                nextData = strtok(NULL, " ");
+            }
+            printf("%c", the_array.array[0]);
+            pid_t pID = fork();
+            if(pID == 0) {
+/*                int used = 0;
+                int size = 1;
+                while(nextData !=NULL){
+                    if (used == size) {
+                        size = 2;
+                        Env_argv = (int *)realloc(Env_argv, size * sizeof(int));
+                    }
+                    Env_argv[used] = nextData;
+                    used++;
+                    nextData = strtok(NULL, " ");
+                }
+                int execReturn = execv(Env_argv[0], Env_argv);
+                if (execReturn == -1){
+                    printf("execv has failed.");
+                }
+                _exit(0);
+            }else if(pID < 0){
+                printf("nFailed to fork.\n");
+            }else{
+                printf("parent process\n");
+                printf("%d",pID);
+               */
+                execv(the_array.array[0], the_array.array);
+            }
+        }
+      nextData = strtok(NULL, " ");
       }
 }
 
