@@ -4,8 +4,69 @@
 #include <dirent.h>
 #include <unistd.h>
 
-void cd(char *nextData) {
+char *cdir;
+/*
+ *function to change the current working directory.
+ *
+ *issues: if the user types cd .. it just tacs it on the end.
+ *This works but could be done better.
+ */
+void exec(char *nextData) {
+    char *envargs[20];
+    int count = 0;
+    int size = 20;
+    while (nextData != NULL) {
+       if (count == size) {
+            size = size * 2;
+            *envargs = (char *)realloc(*envargs, size);
+       }
+       envargs[count] = nextData;
+       count++;
+       nextData = strtok(NULL, " ");
+    }
+    envargs[count] = (char *)0;
+    pid_t pID = fork();
+    if(pID == 0) {
+        execv(envargs[0], envargs);
+        int execReturn = execv(envargs[0], envargs);
+        if (execReturn == -1){
+            printf("execv has failed.");
+        }
+        exit(0);
+    }else if(pID < 0){
+        printf("nFailed to fork.\n");
+    }else{
+        printf("parent process\n");
+    }
+}
 
+void cd(char *nextData) {
+    DIR *dir;
+    char *string = malloc(1024);
+    nextData = strtok(NULL, " ");
+    if (nextData == NULL) {
+        cdir = getenv("shell");
+    }else{
+        char c = *nextData;
+        if (c==47){
+            if((dir = opendir(nextData)) == NULL) {
+                printf("%s does not exist.\n",nextData);
+            }else{
+                strcpy(string, nextData);
+                cdir = string;
+                printf("%s\n", cdir);
+            }
+        }else{
+            strcpy(string, cdir);
+            strcat(string,"/");
+            strcat(string, nextData);
+            if((dir = opendir(string)) == NULL) {
+                printf("%s does not exist.\n",string);
+            }else{
+                cdir = string;
+            }
+        }
+    }
 }
 
 /*
@@ -17,16 +78,30 @@ void clr() {
 }
 
 /*
+ *displays User and the current directory before asking for input.
+ */
+void displayCDir() {
+    printf("%s",getenv("USER"));
+    printf("@");
+    printf("%s",cdir);
+    printf(":");
+}
+
+/*
  *Lists the current directory contents
  */
 void dir(char *nextData) {
+    char *link;
     DIR *dir;
     struct dirent *file;
     nextData = strtok(NULL, " ");
     if (nextData == NULL){
-        nextData = ".";
+        printf("%s\n",cdir);
+        link = cdir;
+    }else{
+        link = nextData;
     }
-    if ((dir = opendir(("%s", nextData))) == NULL)
+    if ((dir = opendir(link)) == NULL)
         perror("opendir() error");
     while((file = readdir(dir)) != NULL)
         printf("  %s\t", file->d_name);
@@ -69,12 +144,9 @@ void help() {
     printf("#################################### HELP ######################################\n");
 }
 
-void mypause() {
 
-}
-
-/* function to set environment values and set starting location.
-
+/*
+function to set environment values and set starting location.
 */
 void setVariables() {
     char cwd[1024];
@@ -89,16 +161,18 @@ void setVariables() {
         perror("getcwd() error");
     return 0;
 }
+
 /*
 Function that listens for input.
 */
 void inputloop() {
+    displayCDir();
     char line[256];
     gets(line);
     char *nextData;
-      nextData = strtok(line," ");
-      while (nextData != NULL)
-      {
+    nextData = strtok(line," ");
+    while (nextData != NULL)
+    {
         if (strcmp("cd", nextData) == 0){
             cd(nextData);
         }else if (strcmp("clr", nextData) == 0) {
@@ -109,16 +183,16 @@ void inputloop() {
             env();
         }else if (strcmp("echo", nextData) == 0) {
             echo(nextData);
-        }else if (strcmp("help", nextData) == 0) {
-            help();
         }else if (strcmp("pause", nextData) == 0) {
             printf("Press ENTER to continue.");
             char *a;
             gets(a);
         }else if ((strcmp("quit", nextData) == 0) || (strcmp("exit", nextData) == 0)  || (strcmp("kill", nextData) == 0)) {
             exit(EXIT_SUCCESS);
-        }else{printf("not a command\n");}
-        nextData = strtok(NULL, " ");
+        }else{
+            exec(nextData);
+        }
+      nextData = strtok(NULL, " ");
       }
 }
 
@@ -126,6 +200,7 @@ void inputloop() {
 int main(void)
 {
     setVariables();
+    cdir = getenv("shell");
     while (1) {
         inputloop();
     }
