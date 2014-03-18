@@ -207,8 +207,6 @@ void inputloop() {
 int main(void)
 {
     setVariables();
-    printf(getenv("shell"));
-    printf("\n");
     cdir = getenv("shell");
     while (1) {
         inputloop();
