@@ -3,13 +3,48 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 char *cdir;
+/*
+ *Function that redirects output to a file.
+*/
+int outRedirect(char *nextData){
+    if (nextData == NULL){
+        return -1;
+    }
+    if (strcmp(">", nextData) == 0){
+        nextData =strtok(NULL, " \n");
+        int file = open(nextData, O_TRUNC|O_CREAT|O_WRONLY,0777);
+        if(file < 0)printf("file failed");
+        dup2(file,1);
+        return file;
+    }else if(strcmp(">>", nextData) == 0){
+        nextData =strtok(NULL, " \n");
+        int file = open(nextData, O_APPEND|O_CREAT|O_WRONLY,0777);
+        if(file < 0)printf("file failed");
+        dup2(file,1);
+        return file;
+    }
+    return 0;
+}
+
+void closeOut(int file, int passed){
+//  fflush(stdout);
+    close(file);
+    //int fl = open(stdout, O_APPEND|O_WRONLY);
+    dup2(passed, 1);
+  //  dup2(file, fileno(stdout));
+    //close(file);
+}
+
 /*
  *Function that attempts to execute anything that
  *isn't a native part of our shell.
  */
 void exec(char *nextData) {
+    int file = -1;
+    int passed = dup(1);
     char *envargs[20];
     int count = 0;
     int size = 20;
@@ -18,9 +53,14 @@ void exec(char *nextData) {
             size = size * 2;
             *envargs = (char *)realloc(*envargs, size);
        }
+       if (strcmp(nextData,">")==0 || strcmp(nextData,">>") == 0){
+           outRedirect(nextData);
+           nextData = strtok(NULL, " \n");
+           break;
+       }
        envargs[count] = nextData;
        count++;
-       nextData = strtok(NULL, " ");
+       nextData = strtok(NULL, " \n");
     }
     envargs[count] = (char *)0;
     pid_t pID = fork();
@@ -40,6 +80,7 @@ void exec(char *nextData) {
     }else{
         printf("parent process\n");
     }
+    closeOut(file, passed);
 }
 /*
  *function to change the current working directory.
@@ -50,7 +91,7 @@ void exec(char *nextData) {
 void cd(char *nextData) {
     DIR *dir;
     char *string = malloc(1024);
-    nextData = strtok(NULL, " ");
+    nextData = strtok(NULL, " \n");
     if (nextData == NULL) {
         cdir = getenv("shell");
     }else{
@@ -68,7 +109,7 @@ void cd(char *nextData) {
             strcat(string,"/");
             strcat(string, nextData);
             if((dir = opendir(string)) == NULL) {
-                printf("%s does not exist.\n",string);
+                printf("%s doesn't exist.\n",string);
             }else{
                 cdir = string;
             }
@@ -98,43 +139,74 @@ void displayCDir() {
  *Lists the current directory contents
  */
 void dir(char *nextData) {
+    int passed = dup(1);
+    int fl = -1;
     char *link;
     DIR *dir;
     struct dirent *file;
-    nextData = strtok(NULL, " ");
+    nextData = strtok(NULL, " \n");
+    if (nextData != NULL){
+        if (strcmp(nextData,">")==0 || strcmp(nextData,">>") == 0) {
+            fl = outRedirect(nextData);
+            nextData = strtok(NULL, " \n");
+        }
+    }
     if (nextData == NULL){
         printf("%s\n",cdir);
         link = cdir;
     }else{
         link = nextData;
+        nextData = strtok(NULL, " \n");
+        outRedirect(nextData);
     }
     if ((dir = opendir(link)) == NULL)
         perror("opendir() error");
     while((file = readdir(dir)) != NULL)
         printf("  %s\t", file->d_name);
     printf("\n");
+    closeOut(fl, passed);
 }
 
-void env() {
+void env(char *nextData) {
+    nextData = strtok(NULL," \n");
+    int file = -1;
+    int passed = dup(1);
+    file = outRedirect(nextData);
     extern char **environ;
     int i = 0;
     while (environ[i]){
         printf("%s\n", environ[i++]);
     }
+    closeOut(file, passed);
 }
 
 
 void echo(char *nextData) {
+    int passed = dup(1);
+    int file = -1;
+    char *oldData;
     if (nextData == NULL){
+
         printf("please enter a comment");
     }else{
-        nextData = strtok(NULL, " ");
+        nextData = strtok(NULL, " \n");
         while(nextData !=NULL){
-            printf("%s ", nextData);
-            nextData = strtok(NULL, " ");
+            //oldData = malloc(strlen(oldData) + strlen(nextData) + 2);
+            //snprintf(oldData, "%s %s",oldData,nextData);
+            strcat(oldData, nextData);
+            strcat(oldData, " ");
+            nextData = strtok(NULL, " \n");
+            if (nextData != NULL){
+                if (strcmp(nextData,">")==0 || strcmp(nextData,">>") == 0) {
+                    file = outRedirect(nextData);
+                    nextData = strtok(NULL, " \n");
+                }
+            }
         }
+        printf("%s", oldData);
         printf("\n");
     }
+    closeOut(file, passed);
 }
 
 void help() {
@@ -172,13 +244,17 @@ void setVariables() {
 /*
 Function that listens for input.
 */
-void inputloop() {
+void inputloop(char *ln) {
     displayCDir();
-    char line[256];
-    gets(line);
     char *nextData;
-    nextData = strtok(line," ");
-    while (nextData != NULL)
+    if(ln == NULL){
+        char line[256];
+        gets(line);
+        nextData = strtok(line," \n");
+    }else{
+        nextData = strtok(ln," \n");
+    }
+    if (nextData != NULL)
     {
         if (strcmp("cd", nextData) == 0){
             cd(nextData);
@@ -187,9 +263,15 @@ void inputloop() {
         }else if (strcmp("dir", nextData) == 0) {
             dir(nextData);
         }else if (strcmp("environ", nextData) == 0) {
-            env();
+            env(nextData);
         }else if (strcmp("echo", nextData) == 0) {
             echo(nextData);
+        }else if (strcmp("help", nextData) == 0){
+            nextData = strtok(NULL, " \n");
+            int currentOut = dup(1);
+            int file = outRedirect(nextData);
+            help();
+            closeOut(file,currentOut);
         }else if (strcmp("pause", nextData) == 0) {
             printf("Press ENTER to continue.");
             char *a;
@@ -199,17 +281,25 @@ void inputloop() {
         }else{
             exec(nextData);
         }
-      nextData = strtok(NULL, " ");
+      nextData = strtok(NULL, " \n");
       }
 }
 
 
-int main(void)
+int main(int argc, char* argv[])
 {
     setVariables();
     cdir = getenv("shell");
-    while (1) {
-        inputloop();
+    if (argv[1] != NULL){
+        char line[256];
+        FILE *file = fopen(argv[1], "r");
+        while (fgets(line, sizeof(line), file) !=NULL) {
+            inputloop(line);
+        }
+    }else{
+        while (1) {
+            inputloop(NULL);
+        }
     }
     return 0;
 }
