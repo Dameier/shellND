@@ -184,17 +184,14 @@ void env(char *nextData) {
 void echo(char *nextData) {
     int passed = dup(1);
     int file = -1;
-    char *oldData;
+    char *oldData = malloc(100);
+    nextData = strtok(NULL, " \n");
     if (nextData == NULL){
-
         printf("please enter a comment");
     }else{
-        nextData = strtok(NULL, " \n");
         while(nextData !=NULL){
-            //oldData = malloc(strlen(oldData) + strlen(nextData) + 2);
-            //snprintf(oldData, "%s %s",oldData,nextData);
             strcat(oldData, nextData);
-            strcat(oldData, " ");
+            strcat(oldData," ");
             nextData = strtok(NULL, " \n");
             if (nextData != NULL){
                 if (strcmp(nextData,">")==0 || strcmp(nextData,">>") == 0) {
